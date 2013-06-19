@@ -7,7 +7,7 @@
   "author": "Krasimir Tsonev",
   "license": "BSD",
   "dependencies": { 
-    
+    "socket.io": "0.9.16"
   },
   "keywords": [
     "auxilio",
