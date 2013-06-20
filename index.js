@@ -2,9 +2,10 @@
 
 var port = 3443;
 var io = require('socket.io').listen(port);
-var exec = require('child_process').exec;
+var spawn = require('child_process').spawn;
 var fs = require("fs");
 var path = require("path");
+var carrier = require('carrier');
 
 var readdir = function(dir) {
 	return fs.readdirSync(dir);
@@ -12,17 +13,33 @@ var readdir = function(dir) {
 
 io.sockets.on('connection', function (socket) {
 
-	var execCommand = function(command, data) {
-		exec(command, function (error, stdout, stderr) {
+	var execCommand = function(command, id) {
+		var parts = command.split(" ");
+		var stream = spawn(parts.shift(), parts);
+		var cstdout = carrier.carry(stream.stdout);
+		var cstderr = carrier.carry(stream.stderr);
+		cstdout.on('line', function(line) {
 			var result = {
-				stdout: stdout, 
-				stderr: stderr, 
+				stdout: line, 
+				stderr: '', 
 				command: command,
 				context: process.cwd(),
-				files: readdir(process.cwd())
+				files: readdir(process.cwd()),
+				id: id
 			};
 			socket.emit("result", result);
-		});
+      	});
+      	cstderr.on('line', function(line) {
+			var result = {
+				stdout: '', 
+				stderr: line, 
+				command: command,
+				context: process.cwd(),
+				files: readdir(process.cwd()),
+				id: id
+			};
+			socket.emit("result", result);
+      	});
 	}
 	var emitError = function(err, command) {
 		var result = {
@@ -30,7 +47,8 @@ io.sockets.on('connection', function (socket) {
 			stderr: err, 
 			command: command,
 			context: process.cwd(),
-			files: readdir(process.cwd())
+			files: readdir(process.cwd()),
+			id: id
 		};
 		socket.emit("result", result);
 	}
@@ -40,7 +58,8 @@ io.sockets.on('connection', function (socket) {
 			stderr: str, 
 			command: command,
 			context: process.cwd(),
-			files: readdir(process.cwd())
+			files: readdir(process.cwd()),
+			id: id
 		};
 		socket.emit("result", result);
 	}
@@ -62,7 +81,7 @@ io.sockets.on('connection', function (socket) {
 				  	emitError(err.toString(), command);
 				}
 			} else {
-				execCommand(command, data);
+				execCommand(command, data.id);
 			}
 		} else {
 			socket.emit("result", {error: "Missing command."});
