@@ -84,7 +84,7 @@ io.sockets.on('connection', function (socket) {
 		context: process.cwd(),
 		files: readdir(process.cwd())
 	});
-	socket.on('command', function (data) {
+	socket.on('command', function(data) {
 		if(data.command) {
 			var command = data.command.toString();
 			var commandParts = command.split(" ");
@@ -103,6 +103,18 @@ io.sockets.on('connection', function (socket) {
 			socket.emit("result", {error: "Missing command.", id: data.id});
 		}
 	});
+	socket.on('readdir', function(data) {
+		var dirFiles = readdir(process.cwd() + "/" + data.path);
+		var result = {
+			stdout: '', 
+			stderr: '', 
+			command: '',
+			context: process.cwd(),
+			files: readdir(process.cwd()).concat(dirFiles)
+		};
+		socket.emit("result", result);
+		socket.emit("showhint", {files: dirFiles})
+	})
 });
 
 // godlike :)
