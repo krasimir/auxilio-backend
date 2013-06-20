@@ -1,4 +1,4 @@
-#!/usr/local/bin/node
+#!/usr/bin/env node
 
 var port = 3443;
 var io = require('socket.io').listen(port);
