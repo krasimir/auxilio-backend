@@ -9,7 +9,11 @@ var path = require("path");
 var carrier = require('carrier');
 
 var readdir = function(dir) {
-	return fs.readdirSync(dir);
+	try {
+		return fs.readdirSync(dir);
+	} catch(e) {
+		return ['Wrong path.'];
+	}
 }
 
 io.sockets.on('connection', function (socket) {
