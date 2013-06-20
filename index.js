@@ -3,6 +3,12 @@
 var port = 3443;
 var io = require('socket.io').listen(port);
 var exec = require('child_process').exec;
+var fs = require("fs");
+var path = require("path");
+
+var readdir = function(dir) {
+	return fs.readdirSync(dir);
+}
 
 io.sockets.on('connection', function (socket) {
 
@@ -12,7 +18,8 @@ io.sockets.on('connection', function (socket) {
 				stdout: stdout, 
 				stderr: stderr, 
 				command: command,
-				context: process.cwd()
+				context: process.cwd(),
+				files: readdir(process.cwd())
 			};
 			socket.emit("result", result);
 		});
@@ -22,7 +29,8 @@ io.sockets.on('connection', function (socket) {
 			stdout: '', 
 			stderr: err, 
 			command: command,
-			context: process.cwd()
+			context: process.cwd(),
+			files: readdir(process.cwd())
 		};
 		socket.emit("result", result);
 	}
@@ -31,12 +39,16 @@ io.sockets.on('connection', function (socket) {
 			stdout: '', 
 			stderr: str, 
 			command: command,
-			context: process.cwd()
+			context: process.cwd(),
+			files: readdir(process.cwd())
 		};
 		socket.emit("result", result);
 	}
 
-	socket.emit('welcome', {context: process.cwd()});
+	socket.emit('welcome', {
+		context: process.cwd(),
+		files: readdir(process.cwd())
+	});
 	socket.on('command', function (data) {
 		if(data.command) {
 			var command = data.command.toString();
@@ -56,4 +68,9 @@ io.sockets.on('connection', function (socket) {
 			socket.emit("result", {error: "Missing command."});
 		}
 	});
+});
+
+// godlike :)
+process.on('uncaughtException', function(err) {
+  	console.log('Caught exception: ' + err);
 });
