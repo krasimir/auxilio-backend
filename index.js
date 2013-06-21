@@ -97,6 +97,8 @@ var updateGitStatus = function(callback) {
 				branch: branch,
 				status: status
 			};
+		} else {
+			gitstatus = {};
 		}
 		if(callback) callback();
 	});
