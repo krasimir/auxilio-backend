@@ -32,6 +32,8 @@ var readDirRecursive = function(dir, ignore) {
 				var stat = fs.statSync(dir + "/" + item);
 				if(stat.isDirectory()) {
 					res[item] = readDirRecursive(dir + "/" + item, ignore);
+				} else {
+					res[item] = 'file';
 				}
 			}
 		}
