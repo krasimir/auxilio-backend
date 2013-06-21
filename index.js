@@ -17,6 +17,29 @@ var readdir = function(dir) {
 		return ['Wrong path.'];
 	}
 }
+var readDirRecursive = function(dir, ignore) {
+	var res = {};
+	try {
+		var items = fs.readdirSync(dir);
+		for(var i=0; item = items[i]; i++) {
+			var ignoreDir = false;
+			if(ignore) {
+				for(var j=0; dirToIgnore = ignore[j]; j++) {
+					if(item === dirToIgnore) ignoreDir = true;
+				}
+			}
+			if(!ignoreDir) {
+				var stat = fs.statSync(dir + "/" + item);
+				if(stat.isDirectory()) {
+					res[item] = readDirRecursive(dir + "/" + item, ignore);
+				}
+			}
+		}
+	} catch(e) {
+		return res;
+	}
+	return res;
+}
 var execCommand = function(command, id, callback) {
 	exec(command, {
 		encoding: 'utf8',
@@ -43,7 +66,7 @@ var execCommand = function(command, id, callback) {
 	});
 }
 var emitError = function(err, command, id) {
-	var result = {
+	socket.emit("result", {
 		stdout: '', 
 		stderr: err, 
 		command: command,
@@ -51,11 +74,10 @@ var emitError = function(err, command, id) {
 		files: readdir(process.cwd()),
 		id: id,
 		git: gitstatus
-	};
-	socket.emit("result", result);
+	});
 }
 var emitMessage = function(str, command, id) {
-	var result = {
+	socket.emit("result", {
 		stdout: '', 
 		stderr: str, 
 		command: command,
@@ -63,8 +85,7 @@ var emitMessage = function(str, command, id) {
 		files: readdir(process.cwd()),
 		id: id,
 		git: gitstatus
-	};
-	socket.emit("result", result);
+	});
 }
 var updateContext = function() {
 	socket.emit('updatecontext', {
@@ -134,11 +155,7 @@ io.sockets.on('connection', function (s) {
 				execCommand(command, data.id);
 			}
 		} else {
-			socket.emit("result", {
-				error: "Missing command.", 
-				id: data.id,
-				git: gitstatus
-			});
+			emitError("Missing command.");
 		}
 	});
 	socket.on('readdir', function(data) {
@@ -156,6 +173,11 @@ io.sockets.on('connection', function (s) {
 			files: dirFiles,
 			git: gitstatus
 		});
+	});
+	socket.on("tree", function(data) {
+		var dir = data.dir ? process.cwd() + "/" + data.dir : process.cwd();
+		var dirs = readDirRecursive(dir, [".git", ".svn"]);
+		socket.emit("tree", {result: dirs});
 	});
 
 	// updating git information
