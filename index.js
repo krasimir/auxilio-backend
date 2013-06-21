@@ -69,7 +69,6 @@ var emitMessage = function(str, command, id) {
 var updateContext = function() {
 	socket.emit('updatecontext', {
 		context: process.cwd(),
-		files: readdir(process.cwd()),
 		git: gitstatus
 	});
 }
@@ -166,7 +165,7 @@ io.sockets.on('connection', function (s) {
 				updateContext();
 				forceUpdateContext();
 			});
-		}, 7000);
+		}, 5000);
 	}	
 	forceUpdateContext();
 
