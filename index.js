@@ -8,10 +8,9 @@ var port = 3443,
 	readdir = require('./lib/ReadDir'),
 	readdireecursive = require('./lib/ReadDirRecursive'),
 	carrier = require('carrier'),
-	socket,
-	gitstatus = {};
+	socket;
 
-var execCommand = function(command, id, callback) {
+var execCommand = function(command, callback) {
 	exec(command, {
 		encoding: 'utf8',
 		maxBuffer: 1020*1024,
@@ -22,18 +21,12 @@ var execCommand = function(command, id, callback) {
 				stdout: stdout,
 				stderr: stderr
 			})
-		} else {
-			socket.emit("result", {
-				stdout: stdout, 
-				stderr: stderr, 
-				command: command,
-				id: id
-			});
 		}
 	});
 }
 var updateGitStatus = function(callback) {
-	execCommand('git status -sb', '', function(res) {
+	execCommand('git status -sb', function(res) {
+		var gitstatus = {};
 		if(res.error == null && res.stdout != '') {
 			var gitStatusResult = res.stdout;
 			var lines = gitStatusResult.split("\n");
@@ -56,10 +49,8 @@ var updateGitStatus = function(callback) {
 				branch: branch,
 				status: status
 			};
-		} else {
-			gitstatus = {};
 		}
-		if(callback) callback();
+		if(callback) callback(gitstatus);
 	});
 }
 
@@ -69,7 +60,6 @@ io.sockets.on('connection', function (s) {
 
 	socket = s;
 
-	socket.emit('welcome');
 	socket.on('command', function(data) {
 		if(data.command) {
 			var command = data.command.toString();
@@ -80,14 +70,20 @@ io.sockets.on('connection', function (s) {
 				  	process.chdir(commandParts.join(" "));
 				  	updateContext();		  	
 				} catch (err) {
-				  	socket.emit("result", {
+				  	socket.emit("command", {
 						stdout: '', 
 						stderr: err.toString(),
 						id: data.id
 					});
 				}
 			} else {
-				execCommand(command, data.id);
+				execCommand(command, function(res) {
+					socket.emit("command", {
+						stdout: res.stdout, 
+						stderr: res.stderr,
+						id: data.id
+					});
+				});
 			}
 		}
 	});
@@ -108,7 +104,7 @@ io.sockets.on('connection', function (s) {
 		}, 2000);
 	}
 	var updateContext = function() {
-		updateGitStatus(function() {
+		updateGitStatus(function(gitstatus) {
 			socket.emit('updatecontext', {
 				context: process.cwd(),
 				git: gitstatus,
@@ -117,7 +113,6 @@ io.sockets.on('connection', function (s) {
 			forceUpdateContext();
 		});
 	}
-	forceUpdateContext();
 	updateContext();
 
 });
