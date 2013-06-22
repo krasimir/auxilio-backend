@@ -68,7 +68,12 @@ io.sockets.on('connection', function (s) {
 			if(commandName === "cd") {
 				try {
 				  	process.chdir(commandParts.join(" "));
-				  	updateContext();		  	
+				  	updateContext();
+				  	socket.emit("command", {
+						stdout: '', 
+						stderr: '',
+						id: data.id
+					});
 				} catch (err) {
 				  	socket.emit("command", {
 						stdout: '', 
