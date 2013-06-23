@@ -9,7 +9,7 @@
   "dependencies": { 
     "socket.io": "0.9.16",
     "carrier": "0.1.10",
-    "walk": "2.2.1"
+    "watchr": "2.4.3"
   },
   "keywords": [
     "auxilio",

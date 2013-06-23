@@ -8,6 +8,7 @@ var port = 3443,
 	readdir = require('./lib/ReadDir'),
 	readdireecursive = require('./lib/ReadDirRecursive'),
 	carrier = require('carrier'),
+	watcher = require('./lib/Watcher'),
 	socket;
 
 var execCommand = function(command, callback) {
@@ -59,6 +60,7 @@ var updateGitStatus = function(callback) {
 io.sockets.on('connection', function (s) {
 
 	socket = s;
+	watcher.init(s);
 
 	socket.on('command', function(data) {
 		if(data.command) {
