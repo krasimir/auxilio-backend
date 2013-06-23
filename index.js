@@ -57,6 +57,7 @@ var updateGitStatus = function(callback) {
 
 
 // ******************************************************* socket.io
+io.set('log level', 1);
 io.sockets.on('connection', function (s) {
 
 	socket = s;
