@@ -2,66 +2,23 @@
 
 var port = 3443,
 	io = require('socket.io').listen(port),
-	spawn = require('child_process').spawn,
-	exec = require('child_process').exec,
 	path = require("path"),
 	readdir = require('./lib/ReadDir'),
 	readdireecursive = require('./lib/ReadDirRecursive'),
 	carrier = require('carrier'),
 	watcher = require('./lib/Watcher'),
-	socket;
-
-var execCommand = function(command, callback) {
-	exec(command, {
-		encoding: 'utf8',
-		maxBuffer: 1020*1024,
-	}, function (error, stdout, stderr) {
-		if(callback) {
-			callback({
-				error: error,
-				stdout: stdout,
-				stderr: stderr
-			})
-		}
-	});
-}
-var updateGitStatus = function(callback) {
-	execCommand('git status -sb', function(res) {
-		var gitstatus = {};
-		if(res.error == null && res.stdout != '') {
-			var gitStatusResult = res.stdout;
-			var lines = gitStatusResult.split("\n");
-			var branch = '';
-			var status = {};
-			for(var i=0; i<lines.length; i++) {
-				var line = lines[i];
-				if(i == 0) {
-					branch = line.replace("## ", '');
-				} else {
-					var parts = line.split(" ");
-					if(parts.length >= 2) {
-						var type = parts.length == 2 ? parts[0] : parts[1];
-						if(!status[type]) status[type] = 0;
-						status[type] += 1;
-					}
-				}
-			}
-			gitstatus = {
-				branch: branch,
-				status: status
-			};
-		}
-		if(callback) callback(gitstatus);
-	});
-}
+	updateGitStatus = require('./lib/UpdateGitStatus')(),
+	Sheller = require('./lib/Sheller');
 
 
 // ******************************************************* socket.io
 io.set('log level', 1);
-io.sockets.on('connection', function (s) {
+io.sockets.on('connection', function (socket) {
 
-	socket = s;
-	watcher.init(s);
+	watcher().init(socket);
+
+	var shell = new Sheller({type: 'exec'}),
+		connected = true;
 
 	socket.on('command', function(data) {
 		if(data.command) {
@@ -85,7 +42,7 @@ io.sockets.on('connection', function (s) {
 					});
 				}
 			} else {
-				execCommand(command, function(res) {
+				shell.exec(command, function(res) {
 					socket.emit("command", {
 						stdout: res.stdout, 
 						stderr: res.stderr,
@@ -104,10 +61,14 @@ io.sockets.on('connection', function (s) {
 		var dirs = readdireecursive(dir, [".git", ".svn"]);
 		socket.emit("tree", { result: dirs });
 	});
+	socket.on('disconnect', function(data) {
+		connected = false;
+	})
 
 	// updating git information
 	var forceUpdateContext = function() {
-		setTimeout(function() {
+		if(!connected) return;
+		setTimeout(function() {	
 			updateContext();
 		}, 2000);
 	}
@@ -119,7 +80,7 @@ io.sockets.on('connection', function (s) {
 				files: readdir(process.cwd())
 			});
 			forceUpdateContext();
-		});
+		}, shell);
 	}
 	updateContext();
 
@@ -129,3 +90,10 @@ io.sockets.on('connection', function (s) {
 process.on('uncaughtException', function(err) {
   	console.log('Caught exception: ' + err);
 });
+
+
+// testing a shell command with long stdout
+// var shell = new Sheller();
+// shell.exec('git pull origin master', function(res) {
+// 	console.log('--------------------------', res);
+// })
