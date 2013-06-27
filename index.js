@@ -15,7 +15,7 @@ var port = 3443,
 io.set('log level', 1);
 io.sockets.on('connection', function (socket) {
 
-	watcher().init(socket);
+	var w = watcher().init(socket);
 
 	var shell = new Sheller({type: 'exec'}),
 		connected = true;
@@ -63,6 +63,7 @@ io.sockets.on('connection', function (socket) {
 	});
 	socket.on('disconnect', function(data) {
 		connected = false;
+		w.stopall();
 	})
 
 	// updating git information
