@@ -69,6 +69,7 @@ io.sockets.on('connection', function (socket) {
 	});
 	socket.on("readfile", function(data) {
 		ReadWriteFiles.read(data.file, function(res) {
+			res.id = data.id;
 			socket.emit("readfile", res);
 		});
 	});
