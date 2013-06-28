@@ -8,7 +8,8 @@ var port = 3443,
 	carrier = require('carrier'),
 	watcher = require('./lib/Watcher'),
 	updateGitStatus = require('./lib/UpdateGitStatus')(),
-	Sheller = require('./lib/Sheller');
+	Sheller = require('./lib/Sheller'),
+	ReadWriteFiles = require('./lib/ReadWriteFiles');
 
 
 // ******************************************************* socket.io
@@ -60,6 +61,16 @@ io.sockets.on('connection', function (socket) {
 		var dir = data.dir ? process.cwd() + "/" + data.dir : process.cwd();
 		var dirs = readdireecursive(dir, [".git", ".svn"]);
 		socket.emit("tree", { result: dirs });
+	});
+	socket.on("writefile", function(data) {
+		ReadWriteFiles.write(data.file, data.content, function(res) {
+			socket.emit("writefile", res);	
+		});
+	});
+	socket.on("readfile", function(data) {
+		ReadWriteFiles.read(data.file, function(res) {
+			socket.emit("readfile", res);
+		});
 	});
 	socket.on('disconnect', function(data) {
 		connected = false;
