@@ -1,6 +1,6 @@
 {
   "name": "auxilio-backend",
-  "version": "0.0.51",
+  "version": "0.0.52",
   "homepage": "https://github.com/krasimir/auxilio-backend",
   "description": "The server responding on auxilio chrome extension",
   "main": "index.js",
