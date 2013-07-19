@@ -104,6 +104,7 @@ process.on('uncaughtException', function(err) {
   	console.log('Caught exception: ' + err);
 });
 
+console.log("Auxilio back-end started.");
 
 // testing a shell command with long stdout
 // var shell = new Sheller();
