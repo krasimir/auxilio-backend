@@ -110,4 +110,4 @@ console.log("Auxilio back-end started.");
 // var shell = new Sheller();
 // shell.exec('git pull origin master', function(res) {
 // 	console.log('--------------------------', res);
-// })
+// }) 
